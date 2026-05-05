@@ -9,7 +9,21 @@
 <meta name="theme-color" content="#0a0a0a">
 <title>Trading Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js">
+// Patch showTab
+var _origShowTab2 = showTab;
+showTab = function(id, btn) {
+  _origShowTab2(id, btn);
+  if (id === 'regles') { loadRules(); renderRules(); }
+};
+
+// Patch enterProfile
+var _origEnterProfile2 = enterProfile;
+enterProfile = function(profileId) {
+  _origEnterProfile2(profileId);
+};
+
+</script>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -123,6 +137,7 @@ body { min-height: 100dvh; }
   text-align: center;
   background: rgba(10,10,10,0.7);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  min-height: 90px;
 }
 .top-bar-name { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
 .top-bar-sub { font-size: 11px; font-family: var(--font-mono); color: var(--muted); margin-top: 2px; }
@@ -130,28 +145,28 @@ body { min-height: 100dvh; }
 /* BOTTOM NAV */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(10,10,10,0.85); border-top: 1px solid var(--border2);
-  display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  background: rgba(10,10,10,0.92); border-top: 1px solid var(--border2);
+  display: flex; padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 .nav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
   background: none; border: none; color: var(--muted); font-family: var(--font-display);
-  font-size: 10px; font-weight: 500; padding: 6px 4px; cursor: pointer; transition: color .2s;
+  font-size: 9px; font-weight: 500; padding: 4px 2px; cursor: pointer; transition: color .2s;
 }
-.nav-btn svg { width: 20px; height: 20px; }
+.nav-btn svg { width: 18px; height: 18px; }
 .nav-btn.active { color: var(--accent); }
 
 /* BACK BTN */
 .back-btn {
-  position: fixed; bottom: calc(10px + env(safe-area-inset-bottom)); left: 16px; z-index: 200;
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: 50%; width: 42px; height: 42px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--muted); transition: color .2s, border-color .2s;
+  position: absolute; top: 50%; left: 16px; transform: translateY(-50%);
+  background: none; border: none;
+  display: flex; align-items: center; gap: 4px;
+  cursor: pointer; color: var(--muted); transition: color .2s;
+  font-family: var(--font-mono); font-size: 11px; z-index: 10;
 }
-.back-btn:active { color: var(--text); border-color: var(--border2); }
-.back-btn svg { width: 18px; height: 18px; }
+.back-btn:active { color: var(--accent); }
+.back-btn svg { width: 16px; height: 16px; }
 
 /* SECTIONS inside app */
 .tab { display: none; }
@@ -268,6 +283,28 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 .cal-sum-label { font-size: 10px; font-family: var(--font-mono); color: var(--muted); margin-bottom: 4px; }
 .cal-sum-val { font-size: 16px; font-weight: 700; }
 
+/* RULES */
+.rules-wrap { padding: 0 16px; }
+.rules-form { background: rgba(17,17,17,0.82); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.rules-checklist-card { background: rgba(17,17,17,0.82); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 12px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.rule-check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.rule-check-item:last-child { border-bottom: none; }
+.rule-check-item:active { opacity: 0.7; }
+.rule-checkbox { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--border2); background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+.rule-checkbox.checked { background: var(--accent); border-color: var(--accent); }
+.rule-checkbox.checked::after { content: ""; display: block; width: 5px; height: 9px; border: 2px solid #0a0a0a; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
+.rule-check-text { font-size: 13px; font-family: var(--font-mono); color: var(--text); line-height: 1.4; flex: 1; }
+.rule-check-text.checked { color: var(--muted); text-decoration: line-through; }
+.rule-check-cat { font-size: 10px; font-family: var(--font-mono); padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+.rule-stat-card { background: rgba(17,17,17,0.82); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; margin-top: 10px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.rule-stat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.rule-stat-name { font-size: 13px; font-family: var(--font-mono); color: var(--text); flex: 1; padding-right: 8px; }
+.rule-stat-pct { font-size: 14px; font-weight: 700; font-family: var(--font-mono); }
+.rule-item-card { background: rgba(17,17,17,0.82); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; margin-top: 10px; display: flex; align-items: center; gap: 12px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.rule-item-text { font-size: 13px; font-family: var(--font-mono); color: var(--text); flex: 1; line-height: 1.4; }
+.rule-item-del { background: none; border: 1px solid rgba(255,92,92,0.25); border-radius: var(--r); padding: 5px 10px; color: var(--red); font-family: var(--font-mono); font-size: 11px; cursor: pointer; flex-shrink: 0; }
+.rule-item-del:active { background: var(--red-dim); }
+
 /* CALCULATOR */
 .calc-wrap { padding: 0 16px; padding-top: 16px; }
 .calc-card { background: rgba(17,17,17,0.82); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
@@ -360,6 +397,10 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
   <div class="app-content">
 
   <div class="top-bar">
+    <div class="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Retour
+    </div>
     <div class="top-bar-name" id="top-bar-name">—</div>
     <div class="top-bar-sub" id="top-bar-sub">Futures</div>
   </div>
@@ -629,6 +670,44 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
     <div style="height:20px"></div>
   </div>
 
+  <!-- REGLES TAB -->
+  <div id="tab-regles" class="tab">
+    <div class="rules-wrap">
+
+      <div class="form-section-title" style="margin-top:16px">Checklist avant trade</div>
+      <div class="rules-checklist-card" id="rules-checklist">
+        <div style="font-size:12px;font-family:var(--font-mono);color:var(--muted);padding:8px 0">Aucune règle — ajoutes-en ci-dessous.</div>
+      </div>
+      <button class="submit-btn" id="rules-validate-btn" onclick="validateChecklist()" style="margin-top:12px;display:none">Valider — toutes les règles respectées</button>
+
+      <div class="form-section-title" style="margin-top:24px">Ajouter une règle</div>
+      <div class="rules-form">
+        <div class="form-group full">
+          <label>Règle de trading</label>
+          <input type="text" id="rule-input" placeholder="ex: Attendre confirmation 2e bougie...">
+        </div>
+        <div class="form-group full" style="margin-top:10px">
+          <label>Catégorie</label>
+          <div class="confluence-grid" id="rule-cat-grid">
+            <div class="conf-chip rule-cat-chip" data-val="Entrée" onclick="selectRuleCat(this)">Entrée</div>
+            <div class="conf-chip rule-cat-chip" data-val="Sortie" onclick="selectRuleCat(this)">Sortie</div>
+            <div class="conf-chip rule-cat-chip" data-val="Risque" onclick="selectRuleCat(this)">Risque</div>
+            <div class="conf-chip rule-cat-chip" data-val="Mental" onclick="selectRuleCat(this)">Mental</div>
+            <div class="conf-chip rule-cat-chip" data-val="Autre" onclick="selectRuleCat(this)">Autre</div>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="addRule()" style="margin-top:14px">Ajouter la règle</button>
+      </div>
+
+      <div class="form-section-title" style="margin-top:24px">Stats — respect des règles</div>
+      <div id="rules-stats-list"></div>
+
+      <div class="form-section-title" style="margin-top:24px">Mes règles</div>
+      <div id="rules-list"></div>
+      <div style="height:20px"></div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-btn active" onclick="showTab('dashboard',this)">
@@ -659,19 +738,161 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4M8 18h4"/></svg>
       Calcul
     </button>
+    <button class="nav-btn" onclick="showTab('regles',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Règles
+    </button>
   </nav>
 
-  <!-- BACK BUTTON -->
-  <div class="back-btn" onclick="goBack()" title="Retour au portail">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M19 12H5M12 5l-7 7 7 7"/>
-    </svg>
-  </div>
+
 
   </div>
 </div>
 
 <script>
+// Global functions defined early so onclick attributes work immediately
+var selectedRuleCat = '';
+var rules = [];
+var checklistState = {};
+
+function selectRuleCat(el) {
+  document.querySelectorAll('.rule-cat-chip').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedRuleCat = el.dataset.val;
+}
+
+function getRulesKey(p) { return 'rules_' + p; }
+function getRulesLogKey(p) { return 'ruleslog_' + p; }
+function saveRules() { if(typeof currentProfile !== 'undefined' && currentProfile) localStorage.setItem(getRulesKey(currentProfile), JSON.stringify(rules)); }
+function getRulesLog() { if(typeof currentProfile === 'undefined' || !currentProfile) return []; return JSON.parse(localStorage.getItem(getRulesLogKey(currentProfile)) || '[]'); }
+function saveRulesLog(log) { if(typeof currentProfile !== 'undefined' && currentProfile) localStorage.setItem(getRulesLogKey(currentProfile), JSON.stringify(log)); }
+
+function getCatColor(cat) {
+  if (cat === 'Entrée') return 'background:rgba(200,240,96,0.1);color:#c8f060';
+  if (cat === 'Sortie') return 'background:rgba(96,180,240,0.1);color:#60b4f0';
+  if (cat === 'Risque') return 'background:rgba(255,92,92,0.1);color:#ff5c5c';
+  if (cat === 'Mental') return 'background:rgba(240,168,64,0.1);color:#f0a840';
+  return 'background:rgba(107,104,96,0.15);color:#6b6860';
+}
+
+function addRule() {
+  var text = document.getElementById('rule-input').value.trim();
+  if (!text) { alert('Entre le texte de la règle.'); return; }
+  if (!selectedRuleCat) { alert('Choisis une catégorie.'); return; }
+  rules.push({ id: Date.now(), text: text, category: selectedRuleCat });
+  saveRules();
+  document.getElementById('rule-input').value = '';
+  document.querySelectorAll('.rule-cat-chip').forEach(function(c) { c.classList.remove('selected'); });
+  selectedRuleCat = '';
+  renderRules();
+}
+
+function deleteRule(id) {
+  rules = rules.filter(function(r) { return r.id !== id; });
+  saveRules();
+  renderRules();
+  if(typeof showToast === 'function') showToast('Règle supprimée');
+}
+
+function toggleCheck(id) {
+  checklistState[id] = !checklistState[id];
+  renderChecklist();
+}
+
+function validateChecklist() {
+  if (!rules.length) return;
+  var log = getRulesLog();
+  var entry = { date: new Date().toISOString(), checked: {} };
+  rules.forEach(function(r) { entry.checked[r.id] = checklistState[r.id] ? true : false; });
+  log.push(entry);
+  saveRulesLog(log);
+  checklistState = {};
+  renderChecklist();
+  renderRulesStats();
+  if(typeof showToast === 'function') showToast('Checklist validée !');
+}
+
+function renderChecklist() {
+  var el = document.getElementById('rules-checklist');
+  var btn = document.getElementById('rules-validate-btn');
+  if (!el) return;
+  if (!rules.length) {
+    el.innerHTML = '<div style="font-size:12px;font-family:var(--font-mono);color:var(--muted);padding:8px 0">Aucune règle — ajoutes-en ci-dessous.</div>';
+    if(btn) btn.style.display = 'none';
+    return;
+  }
+  if(btn) btn.style.display = 'block';
+  var h = '';
+  rules.forEach(function(r) {
+    var checked = checklistState[r.id] ? true : false;
+    h += '<div class="rule-check-item" onclick="toggleCheck(' + r.id + ')">';
+    h += '<div class="rule-checkbox' + (checked ? ' checked' : '') + '"></div>';
+    h += '<div class="rule-check-text' + (checked ? ' checked' : '') + '">' + r.text + '</div>';
+    h += '<span class="rule-check-cat" style="' + getCatColor(r.category) + '">' + r.category + '</span>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
+function renderRulesStats() {
+  var el = document.getElementById('rules-stats-list');
+  if (!el) return;
+  var log = getRulesLog();
+  if (!log.length || !rules.length) {
+    el.innerHTML = '<div style="font-size:12px;font-family:var(--font-mono);color:var(--muted);padding:8px 0">Valide au moins une checklist pour voir les stats.</div>';
+    return;
+  }
+  var h = '';
+  rules.forEach(function(r) {
+    var total = 0, respected = 0;
+    log.forEach(function(entry) {
+      if (entry.checked && entry.checked[r.id] !== undefined) {
+        total++;
+        if (entry.checked[r.id]) respected++;
+      }
+    });
+    if (total === 0) return;
+    var pct = Math.round((respected / total) * 100);
+    var color = pct >= 80 ? '#c8f060' : pct >= 50 ? '#f0a840' : '#ff5c5c';
+    h += '<div class="rule-stat-card">';
+    h += '<div class="rule-stat-top"><div class="rule-stat-name">' + r.text + '</div>';
+    h += '<div class="rule-stat-pct" style="color:' + color + '">' + pct + '%</div></div>';
+    h += '<div class="obj-bar-bg"><div class="obj-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
+    h += '<div style="font-size:10px;font-family:var(--font-mono);color:var(--muted);margin-top:4px">' + respected + ' / ' + total + ' fois respectée</div>';
+    h += '</div>';
+  });
+  el.innerHTML = h || '<div style="font-size:12px;font-family:var(--font-mono);color:var(--muted);padding:8px 0">Aucune donnée encore.</div>';
+}
+
+function renderRulesList() {
+  var el = document.getElementById('rules-list');
+  if (!el) return;
+  if (!rules.length) {
+    el.innerHTML = '<div style="font-size:12px;font-family:var(--font-mono);color:var(--muted);padding:8px 0">Aucune règle ajoutée.</div>';
+    return;
+  }
+  var h = '';
+  rules.forEach(function(r) {
+    h += '<div class="rule-item-card">';
+    h += '<span class="rule-check-cat" style="' + getCatColor(r.category) + '">' + r.category + '</span>';
+    h += '<div class="rule-item-text">' + r.text + '</div>';
+    h += '<button class="rule-item-del" onclick="deleteRule(' + r.id + ')">Supprimer</button>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
+function renderRules() {
+  renderChecklist();
+  renderRulesStats();
+  renderRulesList();
+}
+
+function loadRules() {
+  rules = JSON.parse(localStorage.getItem(getRulesKey(currentProfile)) || '[]');
+  checklistState = {};
+}
+
 const PROFILES = {
   malabko: { name: 'Mala.bko', key: 'trades_malabko' },
   gloovi:  { name: 'Gloovi',   key: 'trades_gloovi'  }
@@ -753,7 +974,11 @@ function goBack() {
   if (distChart) { distChart.destroy(); distChart = null; }
   document.getElementById('app').classList.remove('active');
   document.getElementById('portal').classList.add('active');
-  updatePortalStats();
+  document.addEventListener('click', function(e) {
+
+});
+
+updatePortalStats();
 }
 
 function showTab(id, btn) {
