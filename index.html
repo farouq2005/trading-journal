@@ -144,17 +144,17 @@ body { min-height: 100dvh; }
 
 /* BOTTOM NAV */
 .bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(10,10,10,0.92); border-top: 1px solid var(--border2);
+  position: fixed; bottom: 24px; left: 12px; right: 12px; z-index: 100;
+  background: rgba(10,10,10,0.95); border: 1px solid var(--border2);
+  border-radius: 20px;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   overflow-x: scroll; overflow-y: hidden;
   display: flex; flex-direction: row; flex-wrap: nowrap;
-  padding: 12px 0 34px;
+  padding: 8px 4px;
   gap: 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  scroll-padding: 0 40px;
-  width: 100%;
+  width: auto;
   box-sizing: border-box;
 }
 .bottom-nav::-webkit-scrollbar { display: none; }
