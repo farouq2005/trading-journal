@@ -168,6 +168,16 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 .del-btn:active { color: var(--red); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); font-family: var(--font-mono); font-size: 13px; line-height: 1.8; }
 
+/* CONFLUENCE CHIPS */
+.confluence-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.conf-chip {
+  padding: 7px 12px; border-radius: 20px;
+  background: var(--surface); border: 1px solid var(--border2);
+  font-size: 12px; font-family: var(--font-mono); color: var(--muted);
+  cursor: pointer; transition: all .15s; user-select: none;
+}
+.conf-chip.selected { background: var(--accent-dim); border-color: rgba(200,240,96,0.4); color: var(--accent); }
+
 /* STATS */
 .stats-wrap { padding: 0 16px; }
 .stats-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); margin-top: 8px; }
@@ -212,7 +222,7 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
     <div class="form-section-title">Informations</div>
     <div class="form-grid">
       <div class="form-group"><label>Date</label><input type="date" id="f-date"></div>
-      <div class="form-group"><label>Instrument</label><input type="text" id="f-instrument" placeholder="ES, NQ, CL..."></div>
+      <div class="form-group"><label>Instrument</label><select id="f-instrument"><option value="NQ">NQ</option><option value="ES">ES</option><option value="MNQ">MNQ</option><option value="MES">MES</option><option value="GOLD">GOLD</option></select></div>
       <div class="form-group full">
         <label>Direction</label>
         <div class="toggle-row">
@@ -221,7 +231,20 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
         </div>
       </div>
       <div class="form-group"><label>Contrats</label><input type="number" id="f-contracts" min="1" value="1"></div>
-      <div class="form-group"><label>Setup</label><input type="text" id="f-setup" placeholder="ORB, VWAP..."></div>
+      <div class="form-group full">
+        <label>Confluences (choix multiples)</label>
+        <div class="confluence-grid" id="confluence-grid">
+          <div class="conf-chip" data-val="FVG" onclick="toggleConf(this)">FVG</div>
+          <div class="conf-chip" data-val="IFVG" onclick="toggleConf(this)">IFVG</div>
+          <div class="conf-chip" data-val="OB" onclick="toggleConf(this)">OB</div>
+          <div class="conf-chip" data-val="LIQ SWEEP" onclick="toggleConf(this)">LIQ SWEEP</div>
+          <div class="conf-chip" data-val="CISD" onclick="toggleConf(this)">CISD</div>
+          <div class="conf-chip" data-val="EQ" onclick="toggleConf(this)">EQ</div>
+          <div class="conf-chip" data-val="GOOD DOL" onclick="toggleConf(this)">GOOD DOL</div>
+          <div class="conf-chip" data-val="BAD DOL" onclick="toggleConf(this)">BAD DOL</div>
+          <div class="conf-chip" data-val="MID DOL" onclick="toggleConf(this)">MID DOL</div>
+        </div>
+      </div>
     </div>
 
     <div class="form-section-title">Prix</div>
@@ -466,7 +489,7 @@ function renderJournal() {
         <span class="tag ${res==='Win'?'tag-win':res==='Loss'?'tag-loss':'tag-be'}">${res}</span>
         <span class="tag ${planned?'tag-plan':'tag-noplan'}">${planned?'Dans le plan':'Hors plan'}</span>
         ${t.emotion?`<span class="tag tag-emotion">${t.emotion}</span>`:''}
-        ${t.setup?`<span class="tag tag-emotion">${t.setup}</span>`:''}
+        ${Array.isArray(t.setup) ? t.setup.map(s=>`<span class="tag tag-emotion">${s}</span>`).join('') : (t.setup?`<span class="tag tag-emotion">${t.setup}</span>`:'')}
       </div>
       ${t.notes?`<div class="trade-notes">${t.notes}</div>`:''}
     </div>`;
@@ -476,16 +499,40 @@ function renderJournal() {
 function renderStats() {
   if (!trades.length) return;
   const wins=trades.filter(t=>t.pnl>0).length, losses=trades.filter(t=>t.pnl<0).length, be=trades.filter(t=>t.pnl===0).length;
+  const total = trades.length;
+  const winRate = total ? ((wins/total)*100).toFixed(1) : '0.0';
   const ctx = document.getElementById('distChart').getContext('2d');
   if (distChart) distChart.destroy();
+
+  const centerTextPlugin = {
+    id:'centerText',
+    afterDraw(chart) {
+      const {ctx, chartArea:{top,bottom,left,right}} = chart;
+      const cx = (left+right)/2, cy = (top+bottom)/2;
+      ctx.save();
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#f0ede8';
+      ctx.font='bold 22px Syne, sans-serif';
+      ctx.fillText(winRate+'%', cx, cy-8);
+      ctx.font='11px DM Mono, monospace';
+      ctx.fillStyle='#6b6860';
+      ctx.fillText('win rate', cx, cy+12);
+      ctx.restore();
+    }
+  };
+
   distChart = new Chart(ctx, {
     type:'doughnut',
-    data:{ labels:['Wins','Losses','BE'], datasets:[{ data:[wins,losses,be], backgroundColor:['#c8f060','#ff5c5c','#3a3a3a'], borderWidth:0, hoverOffset:4 }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, position:'right', labels:{ color:'#6b6860', font:{family:'DM Mono',size:11}, boxWidth:10, padding:12 } } } }
+    data:{ labels:['Wins','Losses','BE'], datasets:[{ data:[wins,losses,be], backgroundColor:['#c8f060','#ff5c5c','#3a3a3a'], borderWidth:0, hoverOffset:4, cutout:'68%' }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, position:'right', labels:{ color:'#6b6860', font:{family:'DM Mono',size:11}, boxWidth:10, padding:12 } } } },
+    plugins:[centerTextPlugin]
   });
 
   const bySetup = {};
-  trades.forEach(t => { const s=t.setup||'Non défini'; if(!bySetup[s])bySetup[s]=[]; bySetup[s].push(t); });
+  trades.forEach(t => {
+    const setups = Array.isArray(t.setup) ? t.setup : (t.setup ? [t.setup] : ['Non défini']);
+    setups.forEach(s => { if(!bySetup[s])bySetup[s]=[]; bySetup[s].push(t); });
+  });
   document.getElementById('setup-stats').innerHTML = Object.keys(bySetup).length ? `
     <table class="stats-table">
       <thead><tr><th>Setup</th><th>Trades</th><th>Win%</th><th>P&L</th></tr></thead>
@@ -526,6 +573,12 @@ function renderStats() {
   }
 }
 
+function toggleConf(el) { el.classList.toggle('selected'); }
+
+function getSelectedConf() {
+  return [...document.querySelectorAll('.conf-chip.selected')].map(el => el.dataset.val);
+}
+
 function addTrade() {
   const entry = parseFloat(document.getElementById('f-entry').value);
   const exit = parseFloat(document.getElementById('f-exit').value);
@@ -535,6 +588,7 @@ function addTrade() {
     pnl = selectedDir === 'Long' ? (exit-entry)*contracts : (entry-exit)*contracts;
   }
   if (isNaN(pnl)) { alert('Entre le P&L ou les prix d\'entrée/sortie.'); return; }
+  const confluences = getSelectedConf();
   trades.push({
     date: document.getElementById('f-date').value,
     instrument: document.getElementById('f-instrument').value||'ES',
@@ -544,7 +598,7 @@ function addTrade() {
     sl: parseFloat(document.getElementById('f-sl').value)||null,
     tp: parseFloat(document.getElementById('f-tp').value)||null,
     pnl: parseFloat(pnl.toFixed(2)),
-    setup: document.getElementById('f-setup').value,
+    setup: confluences,
     planFollowed: selectedPlan,
     emotion: document.getElementById('f-emotion').value,
     notes: document.getElementById('f-notes').value,
@@ -560,9 +614,10 @@ function deleteTrade(idx) {
 }
 
 function clearForm() {
-  ['f-instrument','f-entry','f-exit','f-sl','f-tp','f-pnl','f-setup','f-notes'].forEach(id => document.getElementById(id).value='');
+  ['f-entry','f-exit','f-sl','f-tp','f-pnl','f-notes'].forEach(id => document.getElementById(id).value='');
   document.getElementById('f-contracts').value=1;
   document.getElementById('f-emotion').value='Neutre';
+  document.querySelectorAll('.conf-chip').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('[data-val="Long"]').forEach(el => el.classList.add('selected'));
   document.querySelectorAll('[data-val="Short"]').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('[data-val="1"]').forEach(el => el.classList.add('selected'));
